@@ -1,0 +1,14 @@
+{
+    "name": "vicky-dev-9/payments-api",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "VickyDev9\\PaymentsApi\\": "src/"
+        }
+    },
+    "minimum-stability": "stable",
+    "require": {
+        "php": "^8.2"
+    }
+}
