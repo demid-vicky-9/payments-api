@@ -40,7 +40,7 @@ For get orderId use:
             15.25,
             Currency::USD
         );
-        $orderId = $paymentService->cratePayment($makePaymentDTO);
+        $orderId = $paymentService->createPayment($makePaymentDTO);
         
         return $orderId;
     }
