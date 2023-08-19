@@ -9,5 +9,5 @@ interface PaymentInterface
 {
     public function getPaymentInfo(string $paymentId): PaymentInfoDTO;
 
-    public function cratePayment(MakePaymentDTO $paymentDTO): string;
+    public function createPayment(MakePaymentDTO $paymentDTO): string;
 }

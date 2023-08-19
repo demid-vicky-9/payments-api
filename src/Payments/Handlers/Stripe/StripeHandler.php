@@ -34,7 +34,7 @@ class StripeHandler implements PaymentInterface
      * @return string
      * @throws ApiErrorException
      */
-    public function cratePayment(MakePaymentDTO $paymentDTO): string
+    public function createPayment(MakePaymentDTO $paymentDTO): string
     {
         $currency = new CurrencyService();
         return (new CreatePaymentService($currency))->handle($this->stripe, $paymentDTO);

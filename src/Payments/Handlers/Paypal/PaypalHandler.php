@@ -62,7 +62,7 @@ class PaypalHandler implements PaymentInterface
      * @return string
      * @throws Throwable
      */
-    public function cratePayment(MakePaymentDTO $paymentDTO): string
+    public function createPayment(MakePaymentDTO $paymentDTO): string
     {
         $currency = new CurrencyService();
         return (new CreatePaymentService($currency))->handle($this->payPalClient, $paymentDTO);

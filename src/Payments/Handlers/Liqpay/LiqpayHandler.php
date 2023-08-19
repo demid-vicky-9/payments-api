@@ -2,6 +2,7 @@
 
 namespace VickyDev9\PaymentsApi\Payments\Handlers\Liqpay;
 
+use VickyDev9\PaymentsApi\Currency\CurrencyService;
 use VickyDev9\PaymentsApi\Payments\DTO\AuthDataDTO;
 use VickyDev9\PaymentsApi\Payments\DTO\MakePaymentDTO;
 use VickyDev9\PaymentsApi\Payments\DTO\PaymentInfoDTO;
@@ -32,8 +33,9 @@ class LiqpayHandler implements PaymentInterface
      * @param MakePaymentDTO $paymentDTO
      * @return string
      */
-    public function cratePayment(MakePaymentDTO $paymentDTO): string
+    public function createPayment(MakePaymentDTO $paymentDTO): string
     {
-        return (new CreatePaymentService())->handle($this->liqpay, $paymentDTO);
+        $currency = new CurrencyService();
+        return (new CreatePaymentService($currency))->handle($this->liqpay, $paymentDTO);
     }
 }
