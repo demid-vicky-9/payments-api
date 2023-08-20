@@ -24,7 +24,7 @@ class GetPaymentInfoService
         ]);
         return new PaymentInfoDTO(
             $this->getStatus($response->status),
-            PaymentEnum::PAYPAL,
+            PaymentEnum::LIQPAY,
             $response->order_id,
             $response->transaction_id,
             $response->amount,
