@@ -38,7 +38,7 @@ class Liqpay
     const CURRENCY_RUR = 'RUR';
 
     private   $_api_url              = 'https://www.liqpay.ua/api/';
-    private   $_checkout_url         = 'https://www.liqpay.ua/api/3/checkout';
+    private $_checkout_url = 'https://www.liqpay.ua/api/liqpay/checkout';
     protected $_supportedCurrencies  = array(
         self::CURRENCY_EUR,
         self::CURRENCY_USD,
