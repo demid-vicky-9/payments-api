@@ -2,7 +2,6 @@
 
 namespace VickyDev9\PaymentsApi\Payments\Handlers\Liqpay;
 
-
 /**
  * Liqpay Payment Module
  *
@@ -30,26 +29,33 @@ namespace VickyDev9\PaymentsApi\Payments\Handlers\Liqpay;
  *
  * @author      Liqpay <support@liqpay.ua>
  */
+
 class Liqpay
 {
-    const CURRENCY_EUR = 'EUR';
-    const CURRENCY_USD = 'USD';
-    const CURRENCY_UAH = 'UAH';
-    const CURRENCY_RUB = 'RUB';
-    const CURRENCY_RUR = 'RUR';
-
     private   $_api_url              = 'https://www.liqpay.ua/api/';
-    private $_checkout_url = 'https://www.liqpay.ua/api/3/checkout';
+    private   $_checkout_url         = 'https://www.liqpay.ua/api/3/checkout';
     protected $_supportedCurrencies  = array(
-        self::CURRENCY_EUR,
-        self::CURRENCY_USD,
-        self::CURRENCY_UAH,
-        self::CURRENCY_RUB,
-        self::CURRENCY_RUR,
+        'EUR',
+        'USD',
+        'UAH'
     );
+    protected $_supportedLangs       = ['uk', 'ru', 'en'];
     private   $_public_key;
     private   $_private_key;
     private   $_server_response_code = null;
+
+    protected            $_button_translations = array(
+        'ru' => 'Оплатить',
+        'uk' => 'Сплатити',
+        'en' => 'Pay'
+    );
+    protected            $_actions             = array(
+        "pay",
+        "hold",
+        "subscribe",
+        "paydonate"
+    );
+    public CurlRequester $curlRequester;
 
     /**
      * Constructor.
@@ -60,6 +66,7 @@ class Liqpay
      *
      * @throws InvalidArgumentException
      */
+
     public function __construct($public_key, $private_key, $api_url = null)
     {
         if (empty($public_key)) {
@@ -69,6 +76,8 @@ class Liqpay
         if (empty($private_key)) {
             throw new InvalidArgumentException('private_key is empty');
         }
+
+        $this->curlRequester = new CurlRequester();
 
         $this->_public_key = $public_key;
         $this->_private_key = $private_key;
@@ -85,7 +94,7 @@ class Liqpay
      * @param array $params
      * @param int $timeout
      *
-     * @return stdClass
+     * @return array|null
      */
     public function api($path, $params = array(), $timeout = 5)
     {
@@ -102,30 +111,7 @@ class Liqpay
             'signature' => $signature
         ));
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt(
-            $ch,
-            CURLOPT_SSL_VERIFYPEER,
-            true
-        ); // Avoid MITM vulnerability http://phpsecurity.readthedocs.io/en/latest/Input-Validation.html#validation-of-input-sources
-        curl_setopt(
-            $ch,
-            CURLOPT_SSL_VERIFYHOST,
-            2
-        );    // Check the existence of a common name and also verify that it matches the hostname provided
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);   // The number of seconds to wait while trying to connect
-        curl_setopt(
-            $ch,
-            CURLOPT_TIMEOUT,
-            $timeout
-        );          // The maximum number of seconds to allow cURL functions to execute
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $postfields);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $server_output = curl_exec($ch);
-        $this->_server_response_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        $server_output = $this->curlRequester->make_curl_request($url, $postfields);
         return json_decode($server_output);
     }
 
@@ -150,27 +136,29 @@ class Liqpay
      */
     public function cnb_form($params)
     {
-        $language = 'ru';
-        if (isset($params['language']) && $params['language'] == 'en') {
-            $language = 'en';
+        $language = 'uk';
+        if (isset($params['language']) && in_array($params['language'], $this->_supportedLangs)) {
+            $language = $params['language'];
         }
 
         $params = $this->cnb_params($params);
         $data = $this->encode_params($params);
         $signature = $this->cnb_signature($params);
 
+
         return sprintf(
             '
             <form method="POST" action="%s" accept-charset="utf-8">
                 %s
                 %s
-                <input type="image" src="//static.liqpay.ua/buttons/p1%s.radius.png" name="btn_text" />
+                <script type="text/javascript" src="https://static.liqpay.ua/libjs/sdk_button.js"></script>
+                <sdk-button label="%s" background="#77CC5D" onClick="submit()"></sdk-button>
             </form>
             ',
             $this->_checkout_url,
             sprintf('<input type="hidden" name="%s" value="%s" />', 'data', $data),
             sprintf('<input type="hidden" name="%s" value="%s" />', 'signature', $signature),
-            $language
+            $this->_button_translations[$language]
         );
     }
 
@@ -216,7 +204,7 @@ class Liqpay
      *
      * @return array $params
      */
-    private function cnb_params($params)
+    protected function cnb_params($params)
     {
         $params['public_key'] = $this->_public_key;
 
@@ -232,12 +220,21 @@ class Liqpay
         if (!in_array($params['currency'], $this->_supportedCurrencies)) {
             throw new InvalidArgumentException('currency is not supported');
         }
-        if ($params['currency'] == self::CURRENCY_RUR) {
-            $params['currency'] = self::CURRENCY_RUB;
+
+        if (!isset($params['action'])) {
+            throw new InvalidArgumentException('action is null');
         }
+        if (!in_array($params['action'], $this->_actions)) {
+            throw new InvalidArgumentException('action is not supported');
+        }
+        if (!isset($params['order_id'])) {
+            throw new InvalidArgumentException('order_id is null');
+        }
+
         if (!isset($params['description'])) {
             throw new InvalidArgumentException('description is null');
         }
+
 
         return $params;
     }
@@ -248,7 +245,7 @@ class Liqpay
      * @param array $params
      * @return string
      */
-    private function encode_params($params)
+    protected function encode_params($params)
     {
         return base64_encode(json_encode($params));
     }
@@ -276,5 +273,44 @@ class Liqpay
         $signature = base64_encode(sha1($str, 1));
 
         return $signature;
+    }
+}
+
+class CurlRequester
+{
+    /**
+     * make_curl_request
+     * @param $url string
+     * @param $postfields string
+     * @param int $timeout
+     * @return bool|string
+     */
+    public function make_curl_request($url, $postfields, $timeout = 5)
+    {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt(
+            $ch,
+            CURLOPT_SSL_VERIFYPEER,
+            true
+        ); // Avoid MITM vulnerability http://phpsecurity.readthedocs.io/en/latest/Input-Validation.html#validation-of-input-sources
+        curl_setopt(
+            $ch,
+            CURLOPT_SSL_VERIFYHOST,
+            2
+        );    // Check the existence of a common name and also verify that it matches the hostname provided
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);   // The number of seconds to wait while trying to connect
+        curl_setopt(
+            $ch,
+            CURLOPT_TIMEOUT,
+            $timeout
+        );          // The maximum number of seconds to allow cURL functions to execute
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $postfields);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $server_output = curl_exec($ch);
+        $this->_server_response_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        return $server_output;
     }
 }
