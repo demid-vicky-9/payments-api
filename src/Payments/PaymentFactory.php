@@ -4,6 +4,7 @@ namespace VickyDev9\PaymentsApi\Payments;
 
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
 use Stripe\StripeClient;
+use Throwable;
 use VickyDev9\PaymentsApi\Enums\PaymentEnum;
 use VickyDev9\PaymentsApi\Payments\DTO\AuthDataDTO;
 use VickyDev9\PaymentsApi\Payments\Handlers\Liqpay\LiqpayHandler;
@@ -16,6 +17,7 @@ class PaymentFactory
      * @param PaymentEnum $payment
      * @param array $configData
      * @return PaymentInterface
+     * @throws Throwable
      */
     public function getInstance(PaymentEnum $payment, array $configData): PaymentInterface
     {
