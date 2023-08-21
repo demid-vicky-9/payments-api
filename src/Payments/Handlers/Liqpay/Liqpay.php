@@ -2,6 +2,8 @@
 
 namespace VickyDev9\PaymentsApi\Payments\Handlers\Liqpay;
 
+use InvalidArgumentException;
+
 /**
  * Liqpay Payment Module
  *
