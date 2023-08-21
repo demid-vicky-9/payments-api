@@ -52,12 +52,12 @@ class GetPaymentInfoService
     }
 
     /**
-     * @param string $status
+     * @param string $currency
      * @return CurrencyEnum
      */
-    private function getCurrency(string $status): CurrencyEnum
+    private function getCurrency(string $currency): CurrencyEnum
     {
-        return match ($status) {
+        return match ($currency) {
             'USD' => CurrencyEnum::USD,
             default => CurrencyEnum::EUR,
         };
