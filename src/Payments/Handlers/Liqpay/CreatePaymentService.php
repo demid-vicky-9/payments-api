@@ -22,16 +22,17 @@ class CreatePaymentService
      */
     public function handle(Liqpay $liqpay, MakePaymentDTO $paymentDTO): string
     {
-        return
-            json_encode(
-                $liqpay->cnb_form_raw([
-                    'version'     => 3,
-                    'amount'      => $paymentDTO->getAmount(),
-                    'currency'    => $this->currencyService->getCurrencyCode($paymentDTO->getCurrency()),
-                    'description' => $paymentDTO->getDescription(),
-                    'order_id'    => (int)round(microtime(true) * 1000),
-                    'action'      => 'pay',
-                ])
-            );
+        $data = $liqpay->cnb_form_raw([
+            'version'     => 3,
+            'amount'      => $paymentDTO->getAmount(),
+            'currency'    => $this->currencyService->getCurrencyCode($paymentDTO->getCurrency()),
+            'description' => $paymentDTO->getDescription(),
+            'order_id'    => (int)round(microtime(true) * 1000),
+            'action'      => 'pay',
+        ]);
+
+        $result = ['id' => $data['data'], 'sig' => $data['signature']];
+
+        return json_encode($result, true);
     }
 }
