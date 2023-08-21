@@ -29,7 +29,6 @@ namespace VickyDev9\PaymentsApi\Payments\Handlers\Liqpay;
  *
  * @author      Liqpay <support@liqpay.ua>
  */
-
 class Liqpay
 {
     private   $_api_url              = 'https://www.liqpay.ua/api/';
@@ -145,7 +144,6 @@ class Liqpay
         $data = $this->encode_params($params);
         $signature = $this->cnb_signature($params);
 
-
         return sprintf(
             '
             <form method="POST" action="%s" accept-charset="utf-8">
@@ -234,7 +232,6 @@ class Liqpay
         if (!isset($params['description'])) {
             throw new InvalidArgumentException('description is null');
         }
-
 
         return $params;
     }
